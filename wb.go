@@ -11,5 +11,5 @@ var (
 )
 
 func main() {
-	fmt.Println("Hallo Welt")
+	fmt.Println("Hallo")
 }
