@@ -1,0 +1,4 @@
+wb
+==
+
+Web Benchmark
