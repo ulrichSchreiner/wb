@@ -5,7 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 )
@@ -43,8 +45,8 @@ type Statistics struct {
 	TimeMaximum   time.Duration
 	NumCalls      int
 	TimeAggregate int64
-
-	StatusCodes map[int]int
+	StatusCodes   map[int]int
+	Errors        []error
 }
 
 func (c *URLFetcher) loadURL(rq *URLRequest) (*URLResponse, error) {
@@ -83,6 +85,11 @@ func makeFetcher(f *URLFetcher, inc chan *URLRequest, out chan *URLResponse) {
 }
 
 func (s *Statistics) Collector(idx int, rsp *URLResponse) {
+	if rsp.Status == 0 {
+		// Call was illegal, so don't count
+		s.Errors = append(s.Errors, rsp.Error)
+		return
+	}
 	nsMin := s.TimeMinimum.Nanoseconds()
 	nsMax := s.TimeMaximum.Nanoseconds()
 	ns1 := rsp.Time.Nanoseconds()
@@ -174,4 +181,28 @@ func main() {
 	fmt.Println("Result:")
 	fmt.Printf("URL: %s\n", u)
 	stats.Dump()
+	for k, v := range stats.StatusCodes {
+		fmt.Printf("Status %3d: %d Calls\n", k, v)
+	}
+	for i, e := range stats.Errors {
+		switch e.(type) {
+		case *url.Error:
+			ue := e.(*url.Error)
+			if ne, ok := ue.Err.(net.Error); ok {
+				switch {
+				case ne.Temporary():
+					fmt.Printf("Error %d is temporary\n", i)
+				case ne.Timeout():
+					fmt.Printf("Error %d is temporary\n", i)
+				default:
+					fmt.Printf("Error %d: %#v\n", i, ne)
+				}
+			} else {
+				fmt.Printf("Error %d: %#v\n", i, ue.Err)
+			}
+
+		default:
+			fmt.Printf("Error %d: %#v\n", i, e)
+		}
+	}
 }
