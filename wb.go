@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
 )
 
 var (
-	concurrent = flag.Int("c", 1, "Number of multiple requests to make")
+	concurrent = flag.Int("c", 1, "Number of concurrent requests to make")
 	requests   = flag.Int("n", 1, "Number of requests to perform")
 	verbosity  = flag.Int("v", 0, "Show info while running")
 )
@@ -144,6 +145,13 @@ func NewFetcher() *URLFetcher {
 
 func main() {
 	flag.Parse()
+	if len(flag.Args()) == 0 {
+		fmt.Fprintf(os.Stderr, "Usage of %s <url>:\n", os.Args[0])
+		flag.PrintDefaults()
+		os.Exit(0)
+	}
+	u := flag.Arg(0)
+
 	stats := NewStatistics()
 	requestList := make(chan *URLRequest, *requests)
 	responseList := make(chan *URLResponse, *requests)
@@ -152,7 +160,7 @@ func main() {
 	for c := 0; c < *concurrent; c++ {
 		makeFetcher(fetcher, requestList, responseList)
 	}
-	u := flag.Arg(0)
+
 	for i := 0; i < *requests; i++ {
 		r := URLRequest{
 			URL: u}
