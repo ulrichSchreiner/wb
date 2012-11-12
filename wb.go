@@ -16,6 +16,7 @@ var (
 	concurrent = flag.Int("c", 1, "Number of concurrent requests to make")
 	requests   = flag.Int("n", 1, "Number of requests to perform")
 	verbosity  = flag.Int("v", 0, "Show info while running")
+	reuse      = flag.Bool("r",false, "Reuse HTTP Client")
 )
 
 const (
@@ -114,7 +115,7 @@ func (s *Statistics) Collector(idx int, rsp *URLResponse) {
 		mx := s.TimeMaximum / time.Millisecond
 		av := (s.TimeAggregate / int64(s.NumCalls)) / time.Millisecond.Nanoseconds()
 		call := rsp.Time / time.Millisecond
-		fmt.Printf("%6d: Call: %6dms|Min: %6dms|Avg: %6dms|Max: %6dms|Stat:%3d|Len:%6d\n", (idx + 1), call, mi, av, mx, rsp.Status, rsp.ContentLength)
+		fmt.Printf("%6d: Call: %6dms|Min: %6dms|Avg: %6dms|Max: %6dms|Stat:%3d|Len:%6d|%s\n", (idx + 1), call, mi, av, mx, rsp.Status, rsp.ContentLength,rsp.Body)
 	}
 	if *verbosity == VERBOSE_MIN {
 		if s.NumCalls%100 == 0 {
@@ -126,7 +127,10 @@ func (s *Statistics) Collector(idx int, rsp *URLResponse) {
 func (s *Statistics) Dump() {
 	mi := s.TimeMinimum / time.Millisecond
 	mx := s.TimeMaximum / time.Millisecond
-	av := (s.TimeAggregate / int64(s.NumCalls)) / time.Millisecond.Nanoseconds()
+	var av int64
+	if s.NumCalls > 0 {
+		av = (s.TimeAggregate / int64(s.NumCalls)) / time.Millisecond.Nanoseconds()
+	}
 	fmt.Printf("Calls: %6d\tMin: %6dms\tAvg: %6dms\tMax: %6dms\n", s.NumCalls, mi, av, mx)
 }
 
@@ -162,9 +166,12 @@ func main() {
 	stats := NewStatistics()
 	requestList := make(chan *URLRequest, *requests)
 	responseList := make(chan *URLResponse, *requests)
-	fetcher := NewFetcher()
-
+	fetcherSingle := NewFetcher()
 	for c := 0; c < *concurrent; c++ {
+		fetcher := fetcherSingle
+		if !*reuse {
+			fetcher = NewFetcher()
+		}
 		makeFetcher(fetcher, requestList, responseList)
 	}
 
