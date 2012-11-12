@@ -17,6 +17,7 @@ var (
 	requests   = flag.Int("n", 1, "Number of requests to perform")
 	verbosity  = flag.Int("v", 0, "Show info while running")
 	reuse      = flag.Bool("r", false, "Reuse HTTP Client")
+	newClient  = flag.Bool("y", false, "new HTTP Client for every request")
 )
 
 const (
@@ -52,8 +53,16 @@ type Statistics struct {
 
 func (c *URLFetcher) loadURL(rq *URLRequest) (*URLResponse, error) {
 	response := new(URLResponse)
+	client := c.Client
+	if *newClient {
+		tr := &http.Transport{
+			Proxy:           http.ProxyFromEnvironment,
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		client = &http.Client{Transport: tr}
+	}
 	t0 := time.Now()
-	rsp, err := c.Client.Get(rq.URL)
+	rsp, err := client.Get(rq.URL)
 	if err != nil {
 		return nil, err
 	}
