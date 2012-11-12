@@ -16,8 +16,8 @@ var (
 	concurrent = flag.Int("c", 1, "Number of concurrent requests to make")
 	requests   = flag.Int("n", 1, "Number of requests to perform")
 	verbosity  = flag.Int("v", 0, "Show info while running")
-	reuse      = flag.Bool("r", false, "Reuse HTTP Client")
-	newClient  = flag.Bool("y", false, "new HTTP Client for every request")
+	reuse      = flag.Bool("r", false, "Reuse HTTP Client in every worker")
+	newClient  = flag.Bool("y", false, "Create new HTTP Client for every request")
 )
 
 const (
