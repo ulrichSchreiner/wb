@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"time"
+	"runtime"
 )
 
 var (
@@ -172,6 +173,7 @@ func main() {
 	}
 	u := flag.Arg(0)
 
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	stats := NewStatistics()
 	requestList := make(chan *URLRequest, *requests)
 	responseList := make(chan *URLResponse, *requests)
