@@ -150,10 +150,6 @@ func NewStatistics() *Statistics {
 	return s
 }
 
-func responseDumper(rsp *URLResponse) {
-	//log.Printf ("%#v\n", rsp)
-}
-
 func NewFetcher() *URLFetcher {
 	fetcher := new(URLFetcher)
 	tr := &http.Transport{
@@ -194,7 +190,6 @@ func main() {
 	for i := 0; i < *requests; i++ {
 		rsp := <-responseList
 		stats.Collector(i, rsp)
-		responseDumper(rsp)
 	}
 	fmt.Println("Result:")
 	fmt.Printf("URL: %s\n", u)
